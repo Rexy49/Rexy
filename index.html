@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>4x4 Digit Grid with Permutations</title>
+<title>4x4 Permutation Grid</title>
 <style>
   body {
     background-color: #121212;
@@ -42,24 +42,26 @@
   table {
     border-collapse: collapse;
     width: 100%;
+    table-layout: fixed;
   }
   td {
     border: 1px solid #555;
     padding: 12px;
     text-align: center;
-    font-size: 20px;
-    font-weight: bold;
+    font-size: 16px;
+    min-width: 40px;
+    min-height: 40px;
   }
 </style>
 </head>
 <body>
 
-<div class="header">4x4 Digit Grid with Night Mode</div>
+<div class="header">4x4 Permutation Grid with Night Mode</div>
 
 <div class="buttons">
-  <button onclick="generatePermutations()">Generate 256 Permutations</button>
-  <button onclick="search2D()">Search 2D Numbers</button>
-  <button onclick="search3D()">Search 3D Numbers</button>
+  <button onclick="generateAllPermutations()">Generate 256 Permutations</button>
+  <button onclick="search2D()">Search 2D</button>
+  <button onclick="search3D()">Search 3D</button>
   <button onclick="exportToJPEG()">Export to JPEG</button>
 </div>
 
@@ -67,30 +69,48 @@
   <table id="numberGrid"></table>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-  const gridSize = 4;
-  let gridNumbers = [];
+  const size = 4; // 4x4 grid
+  const totalCells = size * size;
 
-  // Function to generate permutations based on selected type
-  function generatePermutations() {
-    // Possible permutation types: 24, 12, 6, 4, 1
-    // For demonstration, we'll generate permutations of 4 digits with different counts
-    const permType = prompt("Enter permutation type (24, 12, 6, 4, 1):", "24");
-    const type = parseInt(permType);
-    if (![24,12,6,4,1].includes(type)) {
-      alert("Invalid permutation type. Please enter 24, 12, 6, 4, or 1.");
+  // Initialize empty grid
+  const table = document.getElementById('numberGrid');
+  function createEmptyGrid() {
+    table.innerHTML = '';
+    for (let r=0; r<size; r++) {
+      const tr = document.createElement('tr');
+      for (let c=0; c<size; c++) {
+        const td = document.createElement('td');
+        td.innerText = '';
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+  }
+
+  createEmptyGrid();
+
+  // Generate permutations based on selected type
+  function generateAllPermutations() {
+    // Prompt for permutation type
+    const permTypeStr = prompt("Enter permutation type (24, 12, 6, 4, 1):", "24");
+    const permType = parseInt(permTypeStr);
+    if (![24,12,6,4,1].includes(permType)) {
+      alert("Invalid permutation type. Please enter 24, 12, 6, 4, or 1");
       return;
     }
 
+    // Prepare digit array
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
-    gridNumbers = [];
+    let perms = [];
 
-    // Helper to generate permutations
+    // Helper function to generate permutations of specific size (without repetitions)
     function getPermutations(array, size) {
       const results = [];
       function permute(path, options) {
         if (path.length === size) {
-          results.push(path);
+          results.push([...path]);
           return;
         }
         for (let i=0; i<options.length; i++) {
@@ -102,95 +122,66 @@
     }
 
     // Generate permutations based on type
-    let perms = [];
-    switch (type) {
+    switch (permType) {
       case 24:
-        // Permutations of 4 digits from 0-9
-        perms = getPermutations(digits, 4);
+        perms = getPermutations(digits, 4); // 4 unique digits
         break;
       case 12:
-        // Permutations of 3 digits (from 0-9) with repetitions? For simplicity, permutations of 3 unique digits
-        // Let's pick first 4 digits for permutation
-        perms = getPermutations(digits.slice(0,4), 3);
+        perms = getPermutations(digits.slice(0,4), 3); // 3 digits
         break;
       case 6:
-        // Permutations of 2 digits
-        perms = getPermutations(digits.slice(0,3), 2);
+        perms = getPermutations(digits.slice(0,3), 2); // 2 digits
         break;
       case 4:
-        // Permutations of 1 digit (just 0-3)
-        perms = digits.slice(0,4).map(d => [d]);
+        perms = digits.slice(0,4).map(d => [d]); // 1 digit only (single digit array)
         break;
       case 1:
-        // Single digit repeated
-        perms = [['0']];
+        perms = [['0']]; // single permutation
         break;
     }
 
-    // Flatten permutations into array of 16 elements
-    // We'll pick first 16 permutations or repeat as needed
-    const totalPerms = perms.length;
-    for (let i=0; i<16; i++) {
-      const perm = perms[i % totalPerms];
-      // Fill the grid row-wise
-      for (let j=0; j<4; j++) {
-        gridNumbers.push(perm[j % perm.length]);
-      }
+    // Fill the grid with permutations
+    gridNumbers = [];
+    for (let i=0; i<totalCells; i++) {
+      const permIndex = i % perms.length;
+      const perm = perms[permIndex];
+      // Fill row-wise
+      gridNumbers.push(perm[i % perm.length]);
     }
-
-    // Create the grid
-    createGrid();
+    // Populate grid
+    populateGrid(gridNumbers);
   }
 
-  function createGrid() {
-    const table = document.getElementById('numberGrid');
-    table.innerHTML = ''; // Clear existing
-    for (let row=0; row<gridSize; row++) {
-      const tr = document.createElement('tr');
-      for (let col=0; col<gridSize; col++) {
-        const td = document.createElement('td');
-        const index = row*gridSize + col;
-        td.innerText = gridNumbers[index] || '0';
-        // Allow only digits 0-9
-        td.contentEditable = true;
-        td.addEventListener('input', (e) => {
-          const val = e.target.innerText;
-          if (!/^[0-9]?$/.test(val)) {
-            e.target.innerText = val.slice(0,1).replace(/[^0-9]/g,'');
-          }
-        });
-        tr.appendChild(td);
+  function populateGrid(numbersArray) {
+    let index = 0;
+    for (let r=0; r<size; r++) {
+      const row = document.querySelectorAll('#numberGrid tr')[r];
+      for (let c=0; c<size; c++) {
+        const cell = row.children[c];
+        cell.innerText = numbersArray[index] || '0';
+        index++;
       }
-      table.appendChild(tr);
     }
   }
 
-  // Initialize with empty grid
-  createGrid();
-
-  // Search functions (placeholders)
+  // Placeholder search functions
   function search2D() {
-    alert("Search 2D Numbers clicked");
+    alert("Search 2D clicked");
   }
-
   function search3D() {
-    alert("Search 3D Numbers clicked");
+    alert("Search 3D clicked");
   }
 
-  // Export table to high-res JPEG
+  // Export grid to HD JPEG
   function exportToJPEG() {
-    const container = document.getElementById('gridContainer');
-    html2canvas(container, {scale: 3}).then(canvas => {
+    html2canvas(document.getElementById('gridContainer'), {scale: 3}).then(canvas => {
       const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/jpeg', 1.0);
-      link.download = 'number_grid_hd.jpg';
+      link.href = canvas.toDataURL('image/jpeg', 1);
+      link.download = 'permutation_grid_hd.jpg';
       link.click();
     });
   }
-
 </script>
-<!-- Include html2canvas library for exporting -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 </body>
 </html>
