@@ -48,7 +48,7 @@
     margin-bottom: 20px;
   }
   input[type="number"] {
-    width: 100%;
+    width: 50px;
     height: clamp(50px, 12vw, 70px);
     font-size: clamp(18px, 5vw, 24px);
     text-align: center;
@@ -124,7 +124,7 @@
 <body>
 <div class="container">
 <h1>4x4 Digit Combinations</h1>
-<div class="description">Enter digits (0-9) in each cell, then generate all 256 combinations. Use the search box to filter combinations.</div>
+<div class="description">Enter maximum values (0-9) in each cell, then generate all combinations from 0 up to those maximums. Use the search box to filter combinations.</div>
 
 <!-- Input Grid -->
 <div class="grid" id="inputGrid"></div>
@@ -183,24 +183,24 @@
     document.getElementById('searchInput').value = '';
   }
 
-  // Generate all 256 combinations
+  // Generate all combinations from 0 up to the max values
   function generateCombinations() {
     allCombinations = [];
-    const values = [];
+    const maxValues = [];
     for (let i=0; i<16; i++) {
       const valStr = document.getElementById('cell'+i).value;
-      const val = parseInt(valStr);
-      if (isNaN(val) || valStr === '') {
-        alert('Please enter digits 0-9 in all cells.');
+      const maxVal = parseInt(valStr);
+      if (isNaN(maxVal) || maxVal < 0 || maxVal > 9) {
+        alert('Please enter valid numbers 0-9 in all cells.');
         return;
       }
-      values.push(val);
+      maxValues.push(maxVal);
     }
-    // Generate combinations using nested loops
-    for (let a=0; a<values[0]+1; a++) {
-      for (let b=0; b<values[1]+1; b++) {
-        for (let c=0; c<values[2]+1; c++) {
-          for (let d=0; d<values[3]+1; d++) {
+    // Generate combinations from 0 to max value for each cell
+    for (let a=0; a<=maxValues[0]; a++) {
+      for (let b=0; b<=maxValues[1]; b++) {
+        for (let c=0; c<=maxValues[2]; c++) {
+          for (let d=0; d<=maxValues[3]; d++) {
             allCombinations.push([a,b,c,d]);
           }
         }
@@ -210,10 +210,14 @@
     updateResults();
   }
 
-  // Update displayed results
+  // Display the current filtered combinations
   function updateResults() {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = '';
+    if (filteredCombinations.length === 0) {
+      resultsDiv.innerHTML = '<p>No matching combinations.</p>';
+      return;
+    }
     filteredCombinations.forEach(arr => {
       const div = document.createElement('div');
       div.className = 'number-item';
@@ -222,14 +226,13 @@
     });
   }
 
-  // Search function: filters combinations containing all digits in input
+  // Search filter: keep only combos that contain all digits entered
   function searchCombinations() {
     const query = document.getElementById('searchInput').value.trim();
     if (query === '') {
-      // No filter
+      // Reset to all
       filteredCombinations = [...allCombinations];
     } else {
-      // Keep only combos that contain all digits in query
       const searchDigits = query.replace(/\D/g, '');
       filteredCombinations = allCombinations.filter(arr => {
         return searchDigits.split('').every(d => arr.includes(parseInt(d)));
@@ -238,7 +241,7 @@
     updateResults();
   }
 
-  // Save all combinations as text
+  // Save all combinations as a text file
   function saveAsTxt() {
     if (allCombinations.length === 0) {
       alert('Please generate combinations first.');
