@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Typical 4D Box Chart with Search</title>
+<title>Rex 4D Box Chart with Search and Input</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -20,13 +20,13 @@
     justify-content: center;
     margin-top: 20px;
   }
-  .box {
-    border: 2px solid #007bff;
-    padding: 20px;
-    font-size: 1.2em;
+  .box-input {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5em;
     text-align: center;
+    border: 2px solid #007bff;
     border-radius: 4px;
-    cursor: default;
   }
   .buttons {
     display: flex;
@@ -69,10 +69,10 @@
 </head>
 <body>
 
-<h1>Rex 4D Box Chart with Search</h1>
+<h1>Rex 4D Box Chart with Input and Search</h1>
 
 <div class="grid" id="grid">
-  <!-- 16 boxes will be generated here -->
+  <!-- 16 input boxes will be generated here -->
 </div>
 
 <div class="buttons">
@@ -97,27 +97,38 @@
 
   let currentCombinations = [];
 
-  // Initialize grid with empty boxes
+  // Initialize grid with input boxes
   function initGrid() {
     gridContainer.innerHTML = '';
     for (let i = 0; i < 16; i++) {
-      const box = document.createElement('div');
-      box.className = 'box';
-      box.textContent = '';
-      gridContainer.appendChild(box);
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.maxLength = 1; // Only one character
+      input.className = 'box-input';
+      // Optional: restrict input to digits only
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9]/g, ''); // Only digits
+      });
+      gridContainer.appendChild(input);
     }
   }
 
-  // Generate all 4-digit combinations from the grid
+  // Generate all 4-digit combinations from the grid inputs
   function generateCombinations() {
-    const boxes = document.querySelectorAll('.grid .box');
-    const digits = Array.from(boxes).map(b => b.textContent);
-    // Generate all 4-digit combinations
+    const inputs = document.querySelectorAll('.grid .box-input');
+    const digits = Array.from(inputs).map(input => input.value.trim() || '');
+    // Filter out empty inputs
+    const filteredDigits = digits.filter(d => d !== '');
+    // Generate combinations only if all boxes are filled
+    if (filteredDigits.length < 16) {
+      alert('Please fill all boxes with digits 0-9.');
+      return;
+    }
     const combos = [];
-    for (let d1 of digits) {
-      for (let d2 of digits) {
-        for (let d3 of digits) {
-          for (let d4 of digits) {
+    for (let d1 of filteredDigits) {
+      for (let d2 of filteredDigits) {
+        for (let d3 of filteredDigits) {
+          for (let d4 of filteredDigits) {
             combos.push(d1 + d2 + d3 + d4);
           }
         }
@@ -147,12 +158,6 @@
 
   // Handle generate button click
   document.getElementById('generateBtn').addEventListener('click', () => {
-    const boxes = document.querySelectorAll('.grid .box');
-    // Fill boxes with predefined digits (as in the example)
-    const predefinedDigits = ['0', '1', '2', '3', '0', '8', '7', '4', '9', '6', '2', '5', '8', '7', '6', '5'];
-    for (let i = 0; i < 16; i++) {
-      boxes[i].textContent = predefinedDigits[i] || '';
-    }
     generateCombinations();
   });
 
