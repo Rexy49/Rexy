@@ -3,107 +3,177 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Permutation of 4 Digits</title>
+<title>Typical 4D Box Chart with Search</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    padding: 20px;
-    background-color: #f0f0f0;
+    background-color: #f0f4f8;
+    margin: 20px;
   }
   h1 {
     text-align: center;
   }
-  #inputContainer {
-    text-align: center;
-    margin-bottom: 20px;
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 60px);
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
   }
-  input[type="text"] {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
+  .box {
+    border: 2px solid #007bff;
+    padding: 20px;
+    font-size: 1.2em;
     text-align: center;
-    margin: 5px;
+    border-radius: 4px;
+    cursor: default;
   }
-  #generateBtn {
-    display: block;
-    margin: 10px auto;
+  .buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 20px;
+  }
+  button {
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 1em;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
   }
-  #results {
-    max-width: 600px;
-    margin: 20px auto;
-    background: #fff;
-    padding: 10px;
-    height: 300px;
-    overflow-y: auto;
-    white-space: pre-wrap;
+  button:hover {
+    background-color: #007bff;
+    color: white;
+  }
+  .search-container {
+    text-align: center;
+    margin-top: 20px;
+  }
+  input[type="text"] {
+    padding: 8px;
+    font-size: 1em;
+    width: 300px;
     border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  .combinations {
+    margin-top: 20px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 0 20px;
+  }
+  .combination {
+    padding: 5px 0;
   }
 </style>
 </head>
 <body>
 
-<h1>Permutation of 4 Digits</h1>
+<h1>Rex 4D Box Chart with Search</h1>
 
-<div id="inputContainer">
-  <input type="text" id="digit1" maxlength="1" placeholder="Digit 1"/>
-  <input type="text" id="digit2" maxlength="1" placeholder="Digit 2"/>
-  <input type="text" id="digit3" maxlength="1" placeholder="Digit 3"/>
-  <input type="text" id="digit4" maxlength="1" placeholder="Digit 4"/>
+<div class="grid" id="grid">
+  <!-- 16 boxes will be generated here -->
 </div>
 
-<button id="generateBtn">Generate Permutations</button>
+<div class="buttons">
+  <button id="generateBtn">Generate</button>
+  <button id="resetBtn">Reset</button>
+</div>
 
-<h2 style="text-align:center;">Results (Total: 24 permutations)</h2>
-<div id="results"></div>
+<div class="search-container">
+  <input type="text" id="searchInput" placeholder="Search combinations containing digits..."/>
+</div>
+
+<div class="combinations" id="combinationsList">
+  <!-- List of combinations will appear here -->
+</div>
 
 <script>
-  document.getElementById('generateBtn').addEventListener('click', () => {
-    const d1 = document.getElementById('digit1').value.trim();
-    const d2 = document.getElementById('digit2').value.trim();
-    const d3 = document.getElementById('digit3').value.trim();
-    const d4 = document.getElementById('digit4').value.trim();
+  const gridContainer = document.getElementById('grid');
+  const generateBtn = document.getElementById('generateBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const searchInput = document.getElementById('searchInput');
+  const combinationsList = document.getElementById('combinationsList');
 
-    if (![d1, d2, d3, d4].every(d => d !== '' && /^[0-9]$/.test(d))) {
-      alert('Please enter 4 digits (0-9) in all fields.');
-      return;
+  let currentCombinations = [];
+
+  // Initialize grid with empty boxes
+  function initGrid() {
+    gridContainer.innerHTML = '';
+    for (let i = 0; i < 16; i++) {
+      const box = document.createElement('div');
+      box.className = 'box';
+      box.textContent = '';
+      gridContainer.appendChild(box);
     }
+  }
 
-    const digits = [d1, d2, d3, d4];
-
-    // Generate all permutations of the 4 digits
-    const results = [];
-    const used = Array(4).fill(false);
-    const currentPermutation = [];
-
-    function permute() {
-      if (currentPermutation.length === 4) {
-        results.push(currentPermutation.join(''));
-        return;
-      }
-      for (let i=0; i<4; i++) {
-        if (!used[i]) {
-          used[i] = true;
-          currentPermutation.push(digits[i]);
-          permute();
-          currentPermutation.pop();
-          used[i] = false;
+  // Generate all 4-digit combinations from the grid
+  function generateCombinations() {
+    const boxes = document.querySelectorAll('.grid .box');
+    const digits = Array.from(boxes).map(b => b.textContent);
+    // Generate all 4-digit combinations
+    const combos = [];
+    for (let d1 of digits) {
+      for (let d2 of digits) {
+        for (let d3 of digits) {
+          for (let d4 of digits) {
+            combos.push(d1 + d2 + d3 + d4);
+          }
         }
       }
     }
+    currentCombinations = combos;
+    displayCombinations(combos);
+  }
 
-    permute();
-
-    // Display results
-    const container = document.getElementById('results');
-    let html = '';
-    results.forEach((p, index) => {
-      html += `${index + 1}. ${p}\n`;
+  // Display list of combinations
+  function displayCombinations(combos) {
+    combinationsList.innerHTML = '';
+    combos.forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'combination';
+      div.textContent = c;
+      combinationsList.appendChild(div);
     });
-    container.textContent = html;
+  }
+
+  // Reset grid and combinations
+  function resetGrid() {
+    initGrid();
+    combinationsList.innerHTML = '';
+    currentCombinations = [];
+  }
+
+  // Handle generate button click
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    const boxes = document.querySelectorAll('.grid .box');
+    // Fill boxes with predefined digits (as in the example)
+    const predefinedDigits = ['0', '1', '2', '3', '0', '8', '7', '4', '9', '6', '2', '5', '8', '7', '6', '5'];
+    for (let i = 0; i < 16; i++) {
+      boxes[i].textContent = predefinedDigits[i] || '';
+    }
+    generateCombinations();
   });
+
+  // Handle reset button click
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    resetGrid();
+  });
+
+  // Handle search input
+  searchInput.addEventListener('input', () => {
+    const query = searchInput.value.trim();
+    if (query === '') {
+      displayCombinations(currentCombinations);
+    } else {
+      const filtered = currentCombinations.filter(c => c.includes(query));
+      displayCombinations(filtered);
+    }
+  });
+
+  // Initialize grid on page load
+  initGrid();
 </script>
 
 </body>
