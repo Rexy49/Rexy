@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rex 4D Box Chart - List Only</title>
+<title>4x4 Digit Combinations</title>
 <style>
   :root {
     --primary-color: #3498db;
@@ -38,26 +38,6 @@
     margin-bottom: 15px;
     font-size: 0.95rem;
     color: #7f8c8d;
-  }
-  /* View toggle buttons */
-  .view-toggle {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 15px;
-    gap: 10px;
-  }
-  button.toggle-btn {
-    padding: 8px 12px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    background-color: var(--primary-color);
-    color: white;
-    transition: background 0.3s;
-  }
-  button.toggle-btn:hover {
-    background-color: var(--secondary-color);
   }
   /* Input grid styles */
   .grid {
@@ -123,10 +103,8 @@
     font-size: 1rem;
   }
   /* Results list */
-  #resultsContainer {
-    margin-top: 20px;
-  }
   #results {
+    margin-top: 20px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -141,22 +119,12 @@
     font-weight: bold;
     font-size: 1rem;
   }
-  /* Hidden class for toggling views */
-  .hidden {
-    display: none;
-  }
 </style>
 </head>
 <body>
 <div class="container">
-<h1>Rex 4D Box Chart - List Only</h1>
-<div class="description">Enter numbers in the grid below, then generate all 256 combinations. Use the search box to filter combinations.</div>
-
-<!-- View toggle buttons -->
-<div class="view-toggle">
-  <!-- Only list view needed, but keeping button for future extension -->
-  <button class="toggle-btn" id="listViewBtn" onclick="showListView()">List View</button>
-</div>
+<h1>4x4 Digit Combinations</h1>
+<div class="description">Enter digits (0-9) in each cell, then generate all 256 combinations. Use the search box to filter combinations.</div>
 
 <!-- Input Grid -->
 <div class="grid" id="inputGrid"></div>
@@ -169,44 +137,42 @@
 </div>
 
 <!-- Search box -->
-<input type="text" id="searchInput" placeholder="Search combinations containing digits..." oninput="searchCombinations()" />
+<input type="text" id="searchInput" placeholder="Search digits..." oninput="searchCombinations()" />
 
-<!-- List view container -->
-<div id="listViewContainer">
-  <h2>Total Combinations: <span id="totalCount">0</span></h2>
-  <div id="results"></div>
-</div>
+<!-- Results display -->
+<div id="results"></div>
 </div>
 
 <script>
-  // Initialize variables
   let allCombinations = [];
   let filteredCombinations = [];
 
-  // Generate input grid
   const inputGrid = document.getElementById('inputGrid');
-  const defaultValues = [1,2,3,4];
 
+  // Create 16 input cells
   function createInputCells() {
     inputGrid.innerHTML = '';
     for (let i=0; i<16; i++) {
       const input = document.createElement('input');
       input.type = 'number';
-      input.min = '1';
-      input.max = '9999';
-      input.value = defaultValues[i % 4];
+      input.min = '0';
+      input.max = '9';
+      input.value = '0';
       input.id = 'cell' + i;
       input.placeholder = '0';
+      input.setAttribute('pattern', '[0-9]');
+      input.setAttribute('maxlength', '1');
+      input.style.width = '50px';
+      input.style.textAlign = 'center';
+      input.oninput = function() {
+        // Ensure only digits 0-9
+        this.value = this.value.replace(/[^0-9]/g, '').slice(0,1);
+      };
       inputGrid.appendChild(input);
     }
   }
 
   createInputCells();
-
-  // Show list view
-  function showListView() {
-    document.getElementById('listViewContainer').classList.remove('hidden');
-  }
 
   // Reset grid
   function resetGrid() {
@@ -214,26 +180,27 @@
     allCombinations = [];
     filteredCombinations = [];
     document.getElementById('results').innerHTML = '';
-    document.getElementById('totalCount').innerText = '0';
+    document.getElementById('searchInput').value = '';
   }
 
-  // Generate combinations
+  // Generate all 256 combinations
   function generateCombinations() {
     allCombinations = [];
     const values = [];
     for (let i=0; i<16; i++) {
-      const val = parseInt(document.getElementById('cell'+i).value);
-      if (isNaN(val)) {
-        alert('Please enter valid numbers in all cells.');
+      const valStr = document.getElementById('cell'+i).value;
+      const val = parseInt(valStr);
+      if (isNaN(val) || valStr === '') {
+        alert('Please enter digits 0-9 in all cells.');
         return;
       }
       values.push(val);
     }
-    // Generate all 256 combinations
-    for (let a=0; a<values[0]; a++) {
-      for (let b=0; b<values[1]; b++) {
-        for (let c=0; c<values[2]; c++) {
-          for (let d=0; d<values[3]; d++) {
+    // Generate combinations using nested loops
+    for (let a=0; a<values[0]+1; a++) {
+      for (let b=0; b<values[1]+1; b++) {
+        for (let c=0; c<values[2]+1; c++) {
+          for (let d=0; d<values[3]+1; d++) {
             allCombinations.push([a,b,c,d]);
           }
         }
@@ -243,11 +210,10 @@
     updateResults();
   }
 
-  // Update list view
+  // Update displayed results
   function updateResults() {
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = '';
-    document.getElementById('totalCount').innerText = filteredCombinations.length;
     filteredCombinations.forEach(arr => {
       const div = document.createElement('div');
       div.className = 'number-item';
@@ -256,22 +222,26 @@
     });
   }
 
-  // Search filtering
+  // Search function: filters combinations containing all digits in input
   function searchCombinations() {
     const query = document.getElementById('searchInput').value.trim();
     if (query === '') {
+      // No filter
       filteredCombinations = [...allCombinations];
     } else {
-      const q = query.replace(/\D/g,''); // keep only digits
-      filteredCombinations = allCombinations.filter(arr => arr.some(d => q.includes(d.toString())));
+      // Keep only combos that contain all digits in query
+      const searchDigits = query.replace(/\D/g, '');
+      filteredCombinations = allCombinations.filter(arr => {
+        return searchDigits.split('').every(d => arr.includes(parseInt(d)));
+      });
     }
     updateResults();
   }
 
-  // Save as TXT
+  // Save all combinations as text
   function saveAsTxt() {
     if (allCombinations.length === 0) {
-      alert('Generate combinations first.');
+      alert('Please generate combinations first.');
       return;
     }
     const lines = allCombinations.map(arr => arr.join(','));
@@ -286,6 +256,5 @@
     URL.revokeObjectURL(url);
   }
 </script>
-</div>
 </body>
 </html>
