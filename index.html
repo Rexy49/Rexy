@@ -2,184 +2,127 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>4x4 Grid Permutation Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>4x4 Number Grid with Night Mode</title>
 <style>
   body {
+    background-color: #121212;
+    color: #ffffff;
     font-family: Arial, sans-serif;
-    margin: 20px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(4, 50px);
-    grid-gap: 5px;
-    margin-bottom: 20px;
-  }
-  .cell {
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
-    text-align: center;
-    vertical-align: middle;
-    border: 2px solid #333;
-  }
-  #subsetSize {
-    margin-bottom: 10px;
-  }
-  button {
-    padding: 10px 20px;
-    font-size: 16px;
-  }
-  #results {
-    margin-top: 20px;
-  }
-  #permutationList {
-    max-height: 300px;
-    overflow-y: auto;
-    border: 1px solid #ccc;
+    margin: 0;
     padding: 10px;
   }
-  .permutation {
-    margin: 2px 0;
+  .header {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+  .buttons {
+    margin-bottom: 15px;
+    text-align: center;
+  }
+  button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    margin: 0 5px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background-color: #555;
+  }
+  #gridContainer {
+    display: inline-block;
+    padding: 10px;
+    border: 2px solid #fff;
+    background-color: #222;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  td {
+    border: 1px solid #555;
+    padding: 12px;
+    text-align: center;
+    font-size: 14px;
   }
 </style>
 </head>
 <body>
 
-<h2>4x4 Grid Number Input</h2>
-<p>Fill all cells with digits (0-9). Then, select subset size: 4, 6, 12, or 16. Click "Generate Permutations" to see permutations of that subset.</p>
+<div class="header">4x4 Number Grid with Night Mode</div>
 
-<div class="grid" id="gridContainer"></div>
-
-<div id="subsetSize">
-  <label for="subsetSelect">Select subset size: </label>
-  <select id="subsetSelect">
-    <option value="4">4</option>
-    <option value="6">6</option>
-    <option value="12">12</option>
-    <option value="16">16</option>
-  </select>
+<div class="buttons">
+  <button onclick="search2D()">Search 2D Numbers</button>
+  <button onclick="search3D()">Search 3D Numbers</button>
+  <button onclick="exportToJPEG()">Export to JPEG</button>
 </div>
 
-<button onclick="generateSubsetPermutations()">Generate Permutations</button>
-
-<div id="results">
-  <h3>Permutations:</h3>
-  <div id="permutationList"></div>
+<div id="gridContainer">
+  <table id="numberGrid"></table>
 </div>
 
 <script>
-// Generate the 4x4 grid with input boxes
-const gridContainer = document.getElementById('gridContainer');
-const cells = [];
-
-for (let i = 0; i < 16; i++) {
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.maxLength = 1;
-  input.className = 'cell';
-  input.placeholder = '';
-  gridContainer.appendChild(input);
-  cells.push(input);
-}
-
-// Function to generate permutations of an array
-function permute(arr) {
-  const results = [];
-  if (arr.length === 1) {
-    return [arr];
+  // Generate 256 unique numbers based on permutations
+  const numbers = [];
+  // For simplicity, we'll generate a shuffled array of 256 numbers from 0 to 255
+  for (let i=0; i<256; i++) {
+    numbers.push(i);
   }
-  for (let i = 0; i < arr.length; i++) {
-    const current = arr.slice();
-    const first = current.splice(i, 1)[0];
-    const remainingPerms = permute(current);
-    for (const perm of remainingPerms) {
-      results.push([first, ...perm]);
+
+  // Shuffle function
+  function shuffle(array) {
+    for (let i=array.length -1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [array[i], array[j]] = [array[j], array[i]];
     }
   }
-  return results;
-}
 
-// Generate permutations of selected subset size
-function generateSubsetPermutations() {
-  const subsetSize = parseInt(document.getElementById('subsetSelect').value);
-  const values = [];
+  shuffle(numbers);
 
-  // Get all valid filled cells
-  for (let i = 0; i < cells.length; i++) {
-    const val = cells[i].value.trim();
-    if (!/^[0-9]$/.test(val)) {
-      alert('All cells must contain digits 0-9.');
-      return;
+  // Fill 16 cells with numbers
+  const gridNumbers = numbers.slice(0, 16);
+
+  // Create 4x4 table
+  const table = document.getElementById('numberGrid');
+  for (let row=0; row<4; row++) {
+    const tr = document.createElement('tr');
+    for (let col=0; col<4; col++) {
+      const td = document.createElement('td');
+      const index = row*4 + col;
+      td.innerText = gridNumbers[index];
+      tr.appendChild(td);
     }
-    values.push(val);
+    table.appendChild(tr);
   }
 
-  // Check if subset size is valid
-  if (subsetSize > values.length) {
-    alert(`Subset size cannot be larger than total cells (${values.length}).`);
-    return;
+  // Search functions (placeholder)
+  function search2D() {
+    alert("Search 2D Numbers clicked");
   }
 
-  // Generate all combinations of size subsetSize
-  const combinations = getCombinations(values, subsetSize);
-  const allPermutations = [];
-
-  // For each combination, generate permutations
-  combinations.forEach(combo => {
-    const perms = permute(combo);
-    allPermutations.push(...perms);
-  });
-
-  // Display permutations
-  displayResults(allPermutations);
-}
-
-// Function to get all combinations of array elements of length k
-function getCombinations(arr, k) {
-  const results = [];
-  function helper(start, combo) {
-    if (combo.length === k) {
-      results.push(combo.slice());
-      return;
-    }
-    for (let i = start; i < arr.length; i++) {
-      combo.push(arr[i]);
-      helper(i + 1, combo);
-      combo.pop();
-    }
-  }
-  helper(0, []);
-  return results;
-}
-
-// Function to display permutations
-function displayResults(permutations) {
-  const container = document.getElementById('permutationList');
-  container.innerHTML = '';
-
-  if (permutations.length === 0) {
-    container.textContent = 'No permutations found.';
-    return;
+  function search3D() {
+    alert("Search 3D Numbers clicked");
   }
 
-  // Limit output for large number of permutations
-  const maxDisplay = 256; 
-  const displayPerms = permutations.slice(0, maxDisplay);
-  displayPerms.forEach(perm => {
-    const div = document.createElement('div');
-    div.className = 'permutation';
-    div.textContent = perm.join(', ');
-    container.appendChild(div);
-  });
-
-  if (permutations.length > maxDisplay) {
-    const note = document.createElement('div');
-    note.textContent = `Showing first ${maxDisplay} of ${permutations.length} permutations.`;
-    container.appendChild(note);
+  // Export table to high-res JPEG
+  function exportToJPEG() {
+    const container = document.getElementById('gridContainer');
+    html2canvas(container, {scale: 3}).then(canvas => {
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/jpeg', 1.0);
+      link.download = 'number_grid_hd.jpg';
+      link.click();
+    });
   }
-}
+
+  // Load html2canvas library
 </script>
+<!-- Include html2canvas library for exporting -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 </body>
 </html>
