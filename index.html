@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rex 4D Box Chart with Enhancements</title>
-<!-- Plotly.js for 3D visualization -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<title>Rex 4D Box Chart - List Only</title>
 <style>
   :root {
     --primary-color: #3498db;
@@ -102,7 +100,7 @@
     cursor: pointer;
     transition: all 0.3s;
     font-weight: 600;
-    min-width: 120px;
+    min-width: 150px;
   }
   button:hover {
     background-color: var(--secondary-color);
@@ -151,13 +149,13 @@
 </head>
 <body>
 <div class="container">
-<h1>Rex 4D Box Chart with Enhancements</h1>
-<div class="description">Enter numbers in the grid below, then generate all combinations. Use the search box to filter combinations. Switch views between list and 3D scatter plot.</div>
+<h1>Rex 4D Box Chart - List Only</h1>
+<div class="description">Enter numbers in the grid below, then generate all 256 combinations. Use the search box to filter combinations.</div>
 
 <!-- View toggle buttons -->
 <div class="view-toggle">
+  <!-- Only list view needed, but keeping button for future extension -->
   <button class="toggle-btn" id="listViewBtn" onclick="showListView()">List View</button>
-  <button class="toggle-btn" id="plotViewBtn" onclick="showPlotView()">3D Plot</button>
 </div>
 
 <!-- Input Grid -->
@@ -168,7 +166,6 @@
   <button id="generateBtn" onclick="generateCombinations()">Generate</button>
   <button onclick="resetGrid()">Reset</button>
   <button onclick="saveAsTxt()">Save as TXT</button>
-  <button onclick="downloadPlotAsJPEG()">Download Plot as JPEG</button>
 </div>
 
 <!-- Search box -->
@@ -178,11 +175,6 @@
 <div id="listViewContainer">
   <h2>Total Combinations: <span id="totalCount">0</span></h2>
   <div id="results"></div>
-</div>
-
-<!-- 3D Plot container -->
-<div id="plotViewContainer" class="hidden" style="margin-top:20px;">
-  <div id="plot"></div>
 </div>
 </div>
 
@@ -214,13 +206,6 @@
   // Show list view
   function showListView() {
     document.getElementById('listViewContainer').classList.remove('hidden');
-    document.getElementById('plotViewContainer').classList.add('hidden');
-  }
-
-  // Show 3D plot view
-  function showPlotView() {
-    document.getElementById('listViewContainer').classList.add('hidden');
-    document.getElementById('plotViewContainer').classList.remove('hidden');
   }
 
   // Reset grid
@@ -230,8 +215,6 @@
     filteredCombinations = [];
     document.getElementById('results').innerHTML = '';
     document.getElementById('totalCount').innerText = '0';
-    // Clear plot
-    Plotly.purge('plot');
   }
 
   // Generate combinations
@@ -246,7 +229,7 @@
       }
       values.push(val);
     }
-    // Generate all combinations
+    // Generate all 256 combinations
     for (let a=0; a<values[0]; a++) {
       for (let b=0; b<values[1]; b++) {
         for (let c=0; c<values[2]; c++) {
@@ -258,7 +241,6 @@
     }
     filteredCombinations = [...allCombinations];
     updateResults();
-    plotData();
   }
 
   // Update list view
@@ -286,44 +268,6 @@
     updateResults();
   }
 
-  // Plot data
-  function plotData() {
-    if (filteredCombinations.length === 0) {
-      Plotly.purge('plot');
-      return;
-    }
-    const x = filteredCombinations.map(arr => arr[0]);
-    const y = filteredCombinations.map(arr => arr[1]);
-    const z = filteredCombinations.map(arr => arr[2]);
-    const size = filteredCombinations.map(arr => Math.max(10, arr[3] + 2)); // size based on last dimension
-
-    const trace = {
-      x: x,
-      y: y,
-      z: z,
-      mode: 'markers',
-      type: 'scatter3d',
-      marker: {
-        size: size,
-        color: z,
-        colorscale: 'Jet',
-        opacity: 0.8,
-        line: { width: 1, color: '#333' }
-      }
-    };
-
-    const layout = {
-      margin: { t: 0 },
-      scene: {
-        xaxis: { title: 'Dim 1' },
-        yaxis: { title: 'Dim 2' },
-        zaxis: { title: 'Dim 3' }
-      }
-    };
-
-    Plotly.newPlot('plot', [trace], layout, {responsive:true});
-  }
-
   // Save as TXT
   function saveAsTxt() {
     if (allCombinations.length === 0) {
@@ -340,11 +284,6 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
-
-  // Download plot as JPEG with HD format
-  function downloadPlotAsJPEG() {
-    Plotly.downloadImage('plot', {format: 'jpeg', filename: '3d_plot', height: 1200, width: 1600});
   }
 </script>
 </div>
