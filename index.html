@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rex 4D Box Chart with Enhanced Features</title>
+<!-- Plotly.js for 3D visualization -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+  :root {
+    --primary-color: #3498db;
+    --secondary-color: #2980b9;
+    --text-color: #2c3e50;
+    --bg-color: #f5f7fa;
+    --card-bg: #ffffff;
+    --border-color: #dfe6e9;
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 15px;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    margin: 0 0 10px 0;
+    text-align: center;
+  }
+  .description {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+    color: #7f8c8d;
+  }
+  /* View toggle buttons */
+  .view-toggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+    gap: 10px;
+  }
+  button.toggle-btn {
+    padding: 8px 12px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    color: white;
+    transition: background 0.3s;
+  }
+  button.toggle-btn:hover {
+    background-color: var(--secondary-color);
+  }
+  /* Input grid styles */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(50px, 70px));
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  input[type="number"] {
+    width: 100%;
+    height: clamp(50px, 12vw, 70px);
+    font-size: clamp(18px, 5vw, 24px);
+    text-align: center;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    font-weight: bold;
+  }
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  }
+  /* Buttons */
+  .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  button {
+    font-size: clamp(14px, 4vw, 16px);
+    padding: 10px 15px;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    min-width: 120px;
+  }
+  button:hover {
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
+  }
+  button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  /* Search box */
+  #searchInput {
+    width: 100%;
+    max-width: 300px;
+    padding: 8px;
+    margin: 10px auto;
+    display: block;
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 1rem;
+  }
+  /* Results list */
+#resultsContainer {
+  margin-top: 20px;
+}
+#results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.number-item {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 1rem;
+}
+/* Hidden class for toggling views */
+.hidden {
+  display: none;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Rex 4D Box Chart with Enhancements</h1>
+<div class="description">Enter numbers in the grid below, then generate all combinations. Use the search box to filter combinations. Switch views between list and 3D scatter plot.</div>
+
+<!-- View toggle buttons -->
+<div class="view-toggle">
+  <button class="toggle-btn" id="listViewBtn" onclick="showListView()">List View</button>
+  <button class="toggle-btn" id="plotViewBtn" onclick="showPlotView()">3D Plot</button>
+</div>
+
+<!-- Input Grid -->
+<div class="grid" id="inputGrid"></div>
+
+<!-- Buttons -->
+<div class="buttons">
+  <button id="generateBtn" onclick="generateCombinations()">Generate</button>
+  <button onclick="resetGrid()">Reset</button>
+  <button onclick="downloadCSV()">Download CSV</button>
+</div>
+
+<!-- Search box -->
+<input type="text" id="searchInput" placeholder="Search combinations containing digits..." oninput="searchCombinations()" />
+
+<!-- List view container -->
+<div id="listViewContainer">
+  <h2>Total Combinations: <span id="totalCount">0</span></h2>
+  <div id="results"></div>
+</div>
+
+<!-- 3D Plot container -->
+<div id="plotViewContainer" class="hidden" style="margin-top:20px;">
+  <div id="plot" style="width:100%; height:600px;"></div>
+</div>
+</div>
+
+<script>
+  let allCombinations = []; // store all 256 combinations
+  let filteredCombinations = []; // for current filtered list
+
+// Initialize input grid
+function initGrid() {
+  const grid = document.getElementById('inputGrid');
+  grid.innerHTML = '';
+  for (let i=0; i<16; i++) {
+    const input = document.createElement('input');
+    input.type='number';
+    input.min='0'; input.max='9';
+    input.value='0';
+    input.id=`cell-${Math.floor(i/4)}-${i%4}`;
+    input.oninput=function() {
+      if (this.value.length>1) this.value=this.value.slice(0,1);
+      validateInputs();
+    }
+    input.onblur=function() {
+      if (this.value==='' || isNaN(this.value)) this.value='0';
+      else {
+        let val=parseInt(this.value);
+        if (val<0) val=0;
+        if (val>9) val=9;
+        this.value=val;
+      }
+      validateInputs();
+    }
+    grid.appendChild(input);
+  }
+  validateInputs();
+}
+
+// Validate inputs
+function validateInputs() {
+  const inputs=document.querySelectorAll('#inputGrid input');
+  const generateBtn=document.getElementById('generateBtn');
+  let allValid=true;
+  inputs.forEach(input=>{
+    const val=input.value.trim();
+    if (val==='' || isNaN(val) || parseInt(val)<0 || parseInt(val)>9) allValid=false;
+  });
+  generateBtn.disabled=!allValid;
+  return allValid;
+}
+
+// Get current columns
+function getColumnValues() {
+  const inputs=document.querySelectorAll('#inputGrid input');
+  const columns=[[],[],[],[]];
+  for (let i=0; i<16; i++) {
+    const colIdx=i%4;
+    let val=parseInt(inputs[i].value);
+    val=Math.max(0, Math.min(9, val));
+    columns[colIdx].push(val.toString());
+  }
+  return columns;
+}
+
+// Generate combinations
+function generateCombinations() {
+  if (!validateInputs()) {
+    alert('Please fill all boxes with numbers between 0-9');
+    return;
+  }
+  const columns=getColumnValues();
+  const combos=new Set();
+
+  for (let a=0; a<columns[0].length; a++) {
+    for (let b=0; b<columns[1].length; b++) {
+      for (let c=0; c<columns[2].length; c++) {
+        for (let d=0; d<columns[3].length; d++) {
+          const combo=columns[0][a]+columns[1][b]+columns[2][c]+columns[3][d];
+          combos.add(combo);
+        }
+      }
+    }
+  }
+  allCombinations=Array.from(combos).sort();
+  filteredCombinations=allCombinations;
+  document.getElementById('totalCount').textContent=allCombinations.length;
+  updateView();
+  if (currentView==='plot') {
+    plot3D();
+  }
+}
+
+// Update view based on current mode
+let currentView='list'; // or 'plot'
+function showListView() {
+  currentView='list';
+  document.getElementById('listViewContainer').classList.remove('hidden');
+  document.getElementById('plotViewContainer').classList.add('hidden');
+  document.getElementById('listViewBtn').disabled=true;
+  document.getElementById('plotViewBtn').disabled=false;
+  updateView();
+}
+function showPlotView() {
+  currentView='plot';
+  document.getElementById('listViewContainer').classList.add('hidden');
+  document.getElementById('plotViewContainer').classList.remove('hidden');
+  document.getElementById('listViewBtn').disabled=false;
+  document.getElementById('plotViewBtn').disabled=true;
+  plot3D();
+}
+
+// Display results in list
+function displayResults(combos) {
+  const resultsDiv=document.getElementById('results');
+  resultsDiv.innerHTML='';
+  combos.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='number-item';
+    div.textContent=c;
+    resultsDiv.appendChild(div);
+  });
+}
+
+// Reset everything
+function resetGrid() {
+  document.querySelectorAll('#inputGrid input').forEach(i=>i.value='0');
+  document.getElementById('results').innerHTML='';
+  document.getElementById('totalCount').textContent='0';
+  allCombinations=[];
+  filteredCombinations=[];
+  document.getElementById('searchInput').value='';
+  currentView='list';
+  showListView();
+}
+
+// Search filtering
+function searchCombinations() {
+  const query=document.getElementById('searchInput').value.trim();
+  if (query==='') {
+    filteredCombinations=allCombinations;
+  } else {
+    const queryDigits=new Set(query.split(''));
+    filteredCombinations=allCombinations.filter(c=>{
+      const cDigits=new Set(c.split(''));
+      for (let d of queryDigits) {
+        if (!cDigits.has(d)) return false;
+      }
+      return true;
+    });
+  }
+  document.getElementById('totalCount').textContent=filteredCombinations.length;
+  updateView();
+  if (currentView==='plot') {
+    plot3D();
+  }
+}
+
+// Update view based on mode
+function updateView() {
+  if (currentView==='list') {
+    document.getElementById('results').innerHTML='';
+    displayResults(filteredCombinations);
+  } else if (currentView==='plot') {
+    plot3D();
+  }
+}
+
+// Plot 3D scatter
+function plot3D() {
+  if (filteredCombinations.length===0) {
+    Plotly.newPlot('plot', [{type:'scatter3d', mode:'markers', x:[], y:[], z:[], marker:{size:4}}], {margin:{t:0}});
+    return;
+  }
+  const xs=[], ys=[], zs=[], colors=[];
+  for (const c of filteredCombinations) {
+    const digits=c.split('').map(d=>parseInt(d));
+    xs.push(digits[0]);
+    ys.push(digits[1]);
+    zs.push(digits[2]);
+    // color based on sum of first three digits
+    colors.push(digits.reduce((a,b)=>a+b,0));
+  }
+  const maxSum=Math.max(...colors);
+  const minSum=Math.min(...colors);
+  const colorScale=['#e74c3c','#f39c12','#f1c40f','#2ecc71','#3498db','#9b59b6'];
+  const markerColors=colors.map(sum=>`rgb( ${Math.floor(255*(sum-minSum)/(maxSum-minSum+1))}, ${Math.floor(255*(maxSum-sum)/(maxSum-minSum+1))}, 150 )`);
+  const trace={
+    type:'scatter3d',
+    mode:'markers',
+    x:xs,
+    y:ys,
+    z:zs,
+    marker: {
+      size:6,
+      color: markerColors,
+      line:{width:0.5, color:'rgb(50,50,50)'}
+    },
+    text: filteredCombinations,
+    hoverinfo: 'text'
+  };
+  const layout={
+    margin:{t:0},
+    scene: {
+      xaxis: {title:'Digit 1'},
+      yaxis: {title:'Digit 2'},
+      zaxis: {title:'Digit 3'}
+    }
+  };
+  Plotly.newPlot('plot', [trace], layout);
+}
+
+// Download CSV
+function downloadCSV() {
+  if (filteredCombinations.length===0) return;
+  const csvContent='data:text/csv;charset=utf-8,Combination\n'+filteredCombinations.join('\n');
+  const encodedUri=encodeURI(csvContent);
+  const link=document.createElement('a');
+  link.setAttribute('href', encodedUri);
+  link.setAttribute('download','combinations.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// Initialize grid on load
+window.onload=function() {
+  initGrid();
+  showListView();
+};
+</script>
+</body>
+</html>
