@@ -10,99 +10,108 @@
     font-family: Arial, sans-serif;
     padding: 20px;
   }
+
   h1 {
     text-align: center;
+    margin-bottom: 10px;
   }
+
+  /* Larger, clearer 4x4 grid style */
   table {
-    margin: 20px auto;
+    margin: 0 auto 20px auto;
     border-collapse: collapse;
+    width: fit-content;
   }
+
   td {
-    border: 1px solid #999;
-    padding: 8px;
+    border: 2px solid #999;
+    padding: 15px;
   }
-  input[type="number"] {
-    width: 50px;
-    font-size: 16px;
+
+  input[type="text"] {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
     text-align: center;
-  }
-  #buttons {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  button {
-    background: #333;
-    color: #fff;
-    border: none;
-    padding: 10px 16px;
-    margin: 0 8px;
-    cursor: pointer;
+    border: 2px solid #666;
     border-radius: 4px;
   }
-  button:hover {
-    background: #555;
+
+  #generateBtn {
+    display: block;
+    margin: 0 auto 20px auto;
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 6px;
+    cursor: pointer;
   }
+
+  #generateBtn:hover {
+    background-color: #777;
+  }
+
+  h2 {
+    text-align: center;
+    margin-top: 30px;
+  }
+
   #results {
-    max-width: 900px;
-    margin: 0 auto;
+    max-width: 1000px;
+    margin: 10px auto;
     background: #fff;
     border: 1px solid #ccc;
     padding: 10px;
-    white-space: pre-wrap;
     font-family: monospace;
-    overflow-x: auto;
     height: 500px;
     overflow-y: auto;
-  }
-  h2 {
-    margin-top: 30px;
-    text-align: center;
+    white-space: pre-wrap;
   }
 </style>
 </head>
 <body>
 
-<h1>Fill the 4x4 Grid Generator</h1>
+<h1 style="text-align:center;">Fill the 4x4 Grid and Generate Permutations</h1>
 
 <!-- 4x4 Input Grid -->
-<table id="gridTable">
-  <tbody>
-    <!-- JS will populate -->
-  </tbody>
-</table>
+<table id="gridTable"></table>
 
-<div id="buttons">
-  <button id="generateBtn">Generate Combinations</button>
-</div>
+<!-- Generate Button -->
+<button id="generateBtn">Generate Combinations</button>
 
-<h2>Permutation Results</h2>
+<h2 style="text-align:center;">Permutation Results</h2>
 <div id="results"></div>
 
 <script>
-  // Generate 4x4 input grid with restrictions
-  const tbody = document.querySelector('#gridTable tbody');
+  // Generate a large, clear 4x4 grid
+  const tbody = document.querySelector('#gridTable');
+
   for (let r=0; r<4; r++) {
-    const tr = document.createElement('tr');
+    const row = document.createElement('tr');
     for (let c=0; c<4; c++) {
-      const td = document.createElement('td');
+      const cell = document.createElement('td');
       const input = document.createElement('input');
-      input.type = 'text'; // Use text to better control input
-      input.maxLength = 1; // Only 1 character
-      input.pattern = '[0-9]'; // Only digits
+      input.type = 'text';
+      input.maxLength = 1; // only one character
+      input.pattern = '[0-9]'; // only digits
       input.placeholder = '0-9';
       input.id = `cell-${r}-${c}`;
+
       // Restrict input to digits 0-9
       input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^0-9]/g, ''); // Remove non-digits
+        input.value = input.value.replace(/[^0-9]/g, '');
       });
-      td.appendChild(input);
-      tr.appendChild(td);
+
+      cell.appendChild(input);
+      row.appendChild(cell);
     }
-    tbody.appendChild(tr);
+    tbody.appendChild(row);
   }
 
   document.getElementById('generateBtn').addEventListener('click', () => {
-    // Collect digits
+    // Collect digits from the grid
     const digits = [];
     for (let r=0; r<4; r++) {
       for (let c=0; c<4; c++) {
@@ -115,12 +124,13 @@
       }
     }
 
-    // Generate unique permutations using counting method
+    // Count occurrences of each digit
     const counts = {};
     digits.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
 
     const uniquePerms = new Set();
 
+    // Recursive function for unique permutations
     const permuteUnique = (path, remainingCounts) => {
       if (path.length === 16) {
         uniquePerms.add(path.join(''));
@@ -140,23 +150,15 @@
     // Convert set to array
     const permsArray = Array.from(uniquePerms);
 
-    // Display
-    displayPermutations(permsArray);
-  });
-
-  function displayPermutations(perms) {
+    // Display the results
     const container = document.getElementById('results');
     let html = '';
-
-    html += `Total unique permutations: ${perms.length}\n\n`;
-
-    // List all permutations
-    perms.forEach((p, index) => {
+    html += `Total unique permutations: ${permsArray.length}\n\n`;
+    permsArray.forEach((p, index) => {
       html += `${index + 1}. ${p}\n`;
     });
-
     container.textContent = html;
-  }
+  });
 </script>
 
 </body>
