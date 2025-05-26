@@ -62,7 +62,7 @@
 </head>
 <body>
 
-<h1>Fill the 4x4 Grid and Generate Permutations</h1>
+<h1>Fill the 4x4 Grid Generator</h1>
 
 <!-- 4x4 Input Grid -->
 <table id="gridTable">
@@ -79,18 +79,22 @@
 <div id="results"></div>
 
 <script>
-  // Generate 4x4 input grid
+  // Generate 4x4 input grid with restrictions
   const tbody = document.querySelector('#gridTable tbody');
   for (let r=0; r<4; r++) {
     const tr = document.createElement('tr');
     for (let c=0; c<4; c++) {
       const td = document.createElement('td');
       const input = document.createElement('input');
-      input.type = 'number';
-      input.min = 0;
-      input.max = 9;
-      input.value = '';
+      input.type = 'text'; // Use text to better control input
+      input.maxLength = 1; // Only 1 character
+      input.pattern = '[0-9]'; // Only digits
+      input.placeholder = '0-9';
       input.id = `cell-${r}-${c}`;
+      // Restrict input to digits 0-9
+      input.addEventListener('input', () => {
+        input.value = input.value.replace(/[^0-9]/g, ''); // Remove non-digits
+      });
       td.appendChild(input);
       tr.appendChild(td);
     }
@@ -103,7 +107,7 @@
     for (let r=0; r<4; r++) {
       for (let c=0; c<4; c++) {
         const val = document.getElementById(`cell-${r}-${c}`).value.trim();
-        if (val === '' || isNaN(val) || val < 0 || val > 9) {
+        if (val === '' || isNaN(val) || val < 0 || val > 9 || val.length !== 1) {
           alert('Please fill all cells with digits 0-9.');
           return;
         }
@@ -111,89 +115,43 @@
       }
     }
 
-    // Generate all unique permutations
-    const uniquePerms = new Set();
-
-    // Generate permutations (with duplicates removed)
-    // For small input (16 digits), permutations are large, but we only generate unique permutations
-    // Use a recursive approach with counting duplicates for efficiency.
-
-    // Count occurrences
+    // Generate unique permutations using counting method
     const counts = {};
     digits.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
 
-    const permuteUnique = (path, length) => {
-      if (path.length === length) {
+    const uniquePerms = new Set();
+
+    const permuteUnique = (path, remainingCounts) => {
+      if (path.length === 16) {
         uniquePerms.add(path.join(''));
         return;
       }
-      for (let key in counts) {
-        if (counts[key] > 0) {
-          counts[key]--;
-          permuteUnique([...path, key], length);
-          counts[key]++;
+      for (let digit in remainingCounts) {
+        if (remainingCounts[digit] > 0) {
+          remainingCounts[digit]--;
+          permuteUnique([...path, digit], remainingCounts);
+          remainingCounts[digit]++;
         }
       }
-    }
-
-    permuteUnique([], 16);
-
-    // Convert to array for processing
-    const permsArray = Array.from(uniquePerms);
-
-    // Categorize permutations based on counts
-    // For simplicity, group by the number of unique digits in the permutation.
-    // Alternatively, categorize based on the number of permutations matching certain permutation counts.
-    // But since duplicates are removed, the total count is less than or equal to 256.
-
-    // For demonstration, we will categorize by number of unique digits in each permutation:
-    const categories = {
-      '24 permutations (all digits unique)': [],
-      '12 permutations (2 repeated digits)': [],
-      '6 permutations (3 repeated digits)': [],
-      '4 permutations (more repeats)': [],
-      '1 permutation (all same digits)': []
     };
 
-    permsArray.forEach(p => {
-      const uniqueCount = new Set(p).size;
-      if (uniqueCount === 16) {
-        categories['24 permutations (all digits unique)'].push(p);
-      } else if (uniqueCount === 15 || uniqueCount === 14 || uniqueCount === 13 || uniqueCount === 12) {
-        categories['12 permutations (2 repeated digits)'].push(p);
-      } else if (uniqueCount === 11 || uniqueCount === 10 || uniqueCount === 9 || uniqueCount === 8) {
-        categories['6 permutations (3 repeated digits)'].push(p);
-      } else if (uniqueCount === 4) {
-        categories['4 permutations (more repeats)'].push(p);
-      } else if (uniqueCount === 1) {
-        categories['1 permutation (all same digits)'].push(p);
-      } else {
-        // fallback, just list all
-      }
-    });
+    permuteUnique([], {...counts});
 
-    // For simplicity, just list all permutations
-    // Or, to match your description, list all in sequence
-    displayPermutations(permsArray, categories);
+    // Convert set to array
+    const permsArray = Array.from(uniquePerms);
+
+    // Display
+    displayPermutations(permsArray);
   });
 
-  function displayPermutations(allPerms, categories) {
+  function displayPermutations(perms) {
     const container = document.getElementById('results');
     let html = '';
 
-    html += `Total unique permutations: ${allPerms.length}\n\n`;
+    html += `Total unique permutations: ${perms.length}\n\n`;
 
-    // Optional: display categorized groups
-    for (const [categoryName, perms] of Object.entries(categories)) {
-      html += `\n--- ${categoryName} ---\n`;
-      perms.forEach((p, index) => {
-        html += `${p}\n`;
-      });
-    }
-
-    // Also display all permutations in sequence
-    html += `\nAll permutations:\n`;
-    allPerms.forEach((p, index) => {
+    // List all permutations
+    perms.forEach((p, index) => {
       html += `${index + 1}. ${p}\n`;
     });
 
