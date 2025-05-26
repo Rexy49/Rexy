@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>4x4 Permutation Grid</title>
+<title>Permutation Display - 4x4 Grid</title>
 <style>
   body {
     background-color: #121212;
@@ -33,79 +33,74 @@
   button:hover {
     background-color: #555;
   }
-  #gridContainer {
-    display: inline-block;
-    padding: 10px;
+  #tableContainer {
+    max-height: 600px;
+    overflow: auto;
     border: 2px solid #fff;
     background-color: #222;
+    padding: 10px;
   }
   table {
     border-collapse: collapse;
     width: 100%;
-    table-layout: fixed;
+    min-width: 300px;
   }
-  td {
+  th, td {
     border: 1px solid #555;
-    padding: 12px;
+    padding: 8px;
     text-align: center;
-    font-size: 16px;
+    font-size: 14px;
     min-width: 40px;
-    min-height: 40px;
   }
+  th {
+    background-color: #444;
+  }
+  /* Optional: highlight header row if needed */
 </style>
 </head>
 <body>
 
-<div class="header">4x4 Permutation Grid with Night Mode</div>
+<div class="header">Permutation Generator - 4x4 Display</div>
 
 <div class="buttons">
-  <button onclick="generateAllPermutations()">Generate 256 Permutations</button>
+  <button onclick="generatePermutations()">Generate 256 Permutations</button>
   <button onclick="search2D()">Search 2D</button>
   <button onclick="search3D()">Search 3D</button>
   <button onclick="exportToJPEG()">Export to JPEG</button>
 </div>
 
-<div id="gridContainer">
-  <table id="numberGrid"></table>
+<div id="tableContainer">
+  <table id="permTable">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Perm 1</th>
+        <th>Perm 2</th>
+        <th>Perm 3</th>
+        <th>Perm 4</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-  const size = 4; // 4x4 grid
-  const totalCells = size * size;
+  const permTableBody = document.querySelector('#permTable tbody');
 
-  // Initialize empty grid
-  const table = document.getElementById('numberGrid');
-  function createEmptyGrid() {
-    table.innerHTML = '';
-    for (let r=0; r<size; r++) {
-      const tr = document.createElement('tr');
-      for (let c=0; c<size; c++) {
-        const td = document.createElement('td');
-        td.innerText = '';
-        tr.appendChild(td);
-      }
-      table.appendChild(tr);
-    }
-  }
-
-  createEmptyGrid();
-
-  // Generate permutations based on selected type
-  function generateAllPermutations() {
+  function generatePermutations() {
     // Prompt for permutation type
     const permTypeStr = prompt("Enter permutation type (24, 12, 6, 4, 1):", "24");
     const permType = parseInt(permTypeStr);
     if (![24,12,6,4,1].includes(permType)) {
-      alert("Invalid permutation type. Please enter 24, 12, 6, 4, or 1");
+      alert("Invalid type. Enter one of 24, 12, 6, 4, 1");
       return;
     }
 
-    // Prepare digit array
     const digits = ['0','1','2','3','4','5','6','7','8','9'];
     let perms = [];
 
-    // Helper function to generate permutations of specific size (without repetitions)
+    // Helper to generate permutations
     function getPermutations(array, size) {
       const results = [];
       function permute(path, options) {
@@ -121,63 +116,68 @@
       return results;
     }
 
-    // Generate permutations based on type
     switch (permType) {
       case 24:
-        perms = getPermutations(digits, 4); // 4 unique digits
+        perms = getPermutations(digits,4); // 4 unique digits
         break;
       case 12:
-        perms = getPermutations(digits.slice(0,4), 3); // 3 digits
+        perms = getPermutations(digits.slice(0,4),3); // 3 digits
         break;
       case 6:
-        perms = getPermutations(digits.slice(0,3), 2); // 2 digits
+        perms = getPermutations(digits.slice(0,3),2); // 2 digits
         break;
       case 4:
-        perms = digits.slice(0,4).map(d => [d]); // 1 digit only (single digit array)
+        perms = digits.slice(0,4).map(d => [d]); // single digit array
         break;
       case 1:
-        perms = [['0']]; // single permutation
+        perms = [['0']]; // single perm
         break;
     }
 
-    // Fill the grid with permutations
-    gridNumbers = [];
-    for (let i=0; i<totalCells; i++) {
+    // Generate all permutations (up to 256)
+    const allPerms = [];
+    for (let i=0; i<256; i++) {
       const permIndex = i % perms.length;
       const perm = perms[permIndex];
-      // Fill row-wise
-      gridNumbers.push(perm[i % perm.length]);
-    }
-    // Populate grid
-    populateGrid(gridNumbers);
-  }
-
-  function populateGrid(numbersArray) {
-    let index = 0;
-    for (let r=0; r<size; r++) {
-      const row = document.querySelectorAll('#numberGrid tr')[r];
-      for (let c=0; c<size; c++) {
-        const cell = row.children[c];
-        cell.innerText = numbersArray[index] || '0';
-        index++;
+      // Build permutation array of 4 digits
+      const permArray = [];
+      for (let j=0; j<4; j++) {
+        permArray.push(perm[j % perm.length]);
       }
+      allPerms.push(permArray);
+    }
+
+    // Clear previous table
+    permTableBody.innerHTML = '';
+
+    // Populate table with each permutation as a row
+    for (let i=0; i<allPerms.length; i++) {
+      const row = document.createElement('tr');
+      const cellNum = document.createElement('td');
+      cellNum.innerText = i+1;
+      row.appendChild(cellNum);
+
+      for (let j=0; j<4; j++) {
+        const cell = document.createElement('td');
+        cell.innerText = allPerms[i][j];
+        row.appendChild(cell);
+      }
+      permTableBody.appendChild(row);
     }
   }
 
-  // Placeholder search functions
   function search2D() {
-    alert("Search 2D clicked");
+    alert('Search 2D clicked (placeholder)');
   }
   function search3D() {
-    alert("Search 3D clicked");
+    alert('Search 3D clicked (placeholder)');
   }
 
-  // Export grid to HD JPEG
   function exportToJPEG() {
-    html2canvas(document.getElementById('gridContainer'), {scale: 3}).then(canvas => {
+    html2canvas(document.getElementById('tableContainer'), {scale: 3}).then(canvas => {
       const link = document.createElement('a');
       link.href = canvas.toDataURL('image/jpeg', 1);
-      link.download = 'permutation_grid_hd.jpg';
+      link.download = 'permutations_hd.jpg';
       link.click();
     });
   }
