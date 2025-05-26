@@ -3,183 +3,201 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Permutation Display - 4x4 Grid</title>
+<title>4x4 Grid Permutation Generator</title>
 <style>
   body {
-    background-color: #121212;
-    color: #ffffff;
+    background: #f0f0f0;
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 10px;
+    padding: 20px;
   }
-  .header {
+  h1 {
     text-align: center;
-    font-size: 24px;
-    margin-bottom: 10px;
   }
-  .buttons {
-    margin-bottom: 15px;
+  table {
+    margin: 20px auto;
+    border-collapse: collapse;
+  }
+  td {
+    border: 1px solid #999;
+    padding: 8px;
+  }
+  input[type="number"] {
+    width: 50px;
+    font-size: 16px;
     text-align: center;
+  }
+  #buttons {
+    text-align: center;
+    margin-bottom: 20px;
   }
   button {
-    background-color: #333;
+    background: #333;
     color: #fff;
     border: none;
-    padding: 8px 16px;
-    margin: 0 5px;
+    padding: 10px 16px;
+    margin: 0 8px;
     cursor: pointer;
     border-radius: 4px;
   }
   button:hover {
-    background-color: #555;
+    background: #555;
   }
-  #tableContainer {
-    max-height: 600px;
-    overflow: auto;
-    border: 2px solid #fff;
-    background-color: #222;
+  #results {
+    max-width: 900px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ccc;
     padding: 10px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    overflow-x: auto;
+    height: 500px;
+    overflow-y: auto;
   }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    min-width: 300px;
-  }
-  th, td {
-    border: 1px solid #555;
-    padding: 8px;
+  h2 {
+    margin-top: 30px;
     text-align: center;
-    font-size: 14px;
-    min-width: 40px;
   }
-  th {
-    background-color: #444;
-  }
-  /* Optional: highlight header row if needed */
 </style>
 </head>
 <body>
 
-<div class="header">Permutation Generator - 4x4 Display</div>
+<h1>Fill the 4x4 Grid and Generate Permutations</h1>
 
-<div class="buttons">
-  <button onclick="generatePermutations()">Generate 256 Permutations</button>
-  <button onclick="search2D()">Search 2D</button>
-  <button onclick="search3D()">Search 3D</button>
-  <button onclick="exportToJPEG()">Export to JPEG</button>
+<!-- 4x4 Input Grid -->
+<table id="gridTable">
+  <tbody>
+    <!-- JS will populate -->
+  </tbody>
+</table>
+
+<div id="buttons">
+  <button id="generateBtn">Generate Combinations</button>
 </div>
 
-<div id="tableContainer">
-  <table id="permTable">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Perm 1</th>
-        <th>Perm 2</th>
-        <th>Perm 3</th>
-        <th>Perm 4</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-</div>
+<h2>Permutation Results</h2>
+<div id="results"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
-  const permTableBody = document.querySelector('#permTable tbody');
-
-  function generatePermutations() {
-    // Prompt for permutation type
-    const permTypeStr = prompt("Enter permutation type (24, 12, 6, 4, 1):", "24");
-    const permType = parseInt(permTypeStr);
-    if (![24,12,6,4,1].includes(permType)) {
-      alert("Invalid type. Enter one of 24, 12, 6, 4, 1");
-      return;
+  // Generate 4x4 input grid
+  const tbody = document.querySelector('#gridTable tbody');
+  for (let r=0; r<4; r++) {
+    const tr = document.createElement('tr');
+    for (let c=0; c<4; c++) {
+      const td = document.createElement('td');
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = 0;
+      input.max = 9;
+      input.value = '';
+      input.id = `cell-${r}-${c}`;
+      td.appendChild(input);
+      tr.appendChild(td);
     }
+    tbody.appendChild(tr);
+  }
 
-    const digits = ['0','1','2','3','4','5','6','7','8','9'];
-    let perms = [];
-
-    // Helper to generate permutations
-    function getPermutations(array, size) {
-      const results = [];
-      function permute(path, options) {
-        if (path.length === size) {
-          results.push([...path]);
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    // Collect digits
+    const digits = [];
+    for (let r=0; r<4; r++) {
+      for (let c=0; c<4; c++) {
+        const val = document.getElementById(`cell-${r}-${c}`).value.trim();
+        if (val === '' || isNaN(val) || val < 0 || val > 9) {
+          alert('Please fill all cells with digits 0-9.');
           return;
         }
-        for (let i=0; i<options.length; i++) {
-          permute([...path, options[i]], [...options.slice(0,i), ...options.slice(i+1)]);
+        digits.push(val);
+      }
+    }
+
+    // Generate all unique permutations
+    const uniquePerms = new Set();
+
+    // Generate permutations (with duplicates removed)
+    // For small input (16 digits), permutations are large, but we only generate unique permutations
+    // Use a recursive approach with counting duplicates for efficiency.
+
+    // Count occurrences
+    const counts = {};
+    digits.forEach(d => { counts[d] = (counts[d] || 0) + 1; });
+
+    const permuteUnique = (path, length) => {
+      if (path.length === length) {
+        uniquePerms.add(path.join(''));
+        return;
+      }
+      for (let key in counts) {
+        if (counts[key] > 0) {
+          counts[key]--;
+          permuteUnique([...path, key], length);
+          counts[key]++;
         }
       }
-      permute([], array);
-      return results;
     }
 
-    switch (permType) {
-      case 24:
-        perms = getPermutations(digits,4); // 4 unique digits
-        break;
-      case 12:
-        perms = getPermutations(digits.slice(0,4),3); // 3 digits
-        break;
-      case 6:
-        perms = getPermutations(digits.slice(0,3),2); // 2 digits
-        break;
-      case 4:
-        perms = digits.slice(0,4).map(d => [d]); // single digit array
-        break;
-      case 1:
-        perms = [['0']]; // single perm
-        break;
-    }
+    permuteUnique([], 16);
 
-    // Generate all permutations (up to 256)
-    const allPerms = [];
-    for (let i=0; i<256; i++) {
-      const permIndex = i % perms.length;
-      const perm = perms[permIndex];
-      // Build permutation array of 4 digits
-      const permArray = [];
-      for (let j=0; j<4; j++) {
-        permArray.push(perm[j % perm.length]);
+    // Convert to array for processing
+    const permsArray = Array.from(uniquePerms);
+
+    // Categorize permutations based on counts
+    // For simplicity, group by the number of unique digits in the permutation.
+    // Alternatively, categorize based on the number of permutations matching certain permutation counts.
+    // But since duplicates are removed, the total count is less than or equal to 256.
+
+    // For demonstration, we will categorize by number of unique digits in each permutation:
+    const categories = {
+      '24 permutations (all digits unique)': [],
+      '12 permutations (2 repeated digits)': [],
+      '6 permutations (3 repeated digits)': [],
+      '4 permutations (more repeats)': [],
+      '1 permutation (all same digits)': []
+    };
+
+    permsArray.forEach(p => {
+      const uniqueCount = new Set(p).size;
+      if (uniqueCount === 16) {
+        categories['24 permutations (all digits unique)'].push(p);
+      } else if (uniqueCount === 15 || uniqueCount === 14 || uniqueCount === 13 || uniqueCount === 12) {
+        categories['12 permutations (2 repeated digits)'].push(p);
+      } else if (uniqueCount === 11 || uniqueCount === 10 || uniqueCount === 9 || uniqueCount === 8) {
+        categories['6 permutations (3 repeated digits)'].push(p);
+      } else if (uniqueCount === 4) {
+        categories['4 permutations (more repeats)'].push(p);
+      } else if (uniqueCount === 1) {
+        categories['1 permutation (all same digits)'].push(p);
+      } else {
+        // fallback, just list all
       }
-      allPerms.push(permArray);
-    }
-
-    // Clear previous table
-    permTableBody.innerHTML = '';
-
-    // Populate table with each permutation as a row
-    for (let i=0; i<allPerms.length; i++) {
-      const row = document.createElement('tr');
-      const cellNum = document.createElement('td');
-      cellNum.innerText = i+1;
-      row.appendChild(cellNum);
-
-      for (let j=0; j<4; j++) {
-        const cell = document.createElement('td');
-        cell.innerText = allPerms[i][j];
-        row.appendChild(cell);
-      }
-      permTableBody.appendChild(row);
-    }
-  }
-
-  function search2D() {
-    alert('Search 2D clicked (placeholder)');
-  }
-  function search3D() {
-    alert('Search 3D clicked (placeholder)');
-  }
-
-  function exportToJPEG() {
-    html2canvas(document.getElementById('tableContainer'), {scale: 3}).then(canvas => {
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/jpeg', 1);
-      link.download = 'permutations_hd.jpg';
-      link.click();
     });
+
+    // For simplicity, just list all permutations
+    // Or, to match your description, list all in sequence
+    displayPermutations(permsArray, categories);
+  });
+
+  function displayPermutations(allPerms, categories) {
+    const container = document.getElementById('results');
+    let html = '';
+
+    html += `Total unique permutations: ${allPerms.length}\n\n`;
+
+    // Optional: display categorized groups
+    for (const [categoryName, perms] of Object.entries(categories)) {
+      html += `\n--- ${categoryName} ---\n`;
+      perms.forEach((p, index) => {
+        html += `${p}\n`;
+      });
+    }
+
+    // Also display all permutations in sequence
+    html += `\nAll permutations:\n`;
+    allPerms.forEach((p, index) => {
+      html += `${index + 1}. ${p}\n`;
+    });
+
+    container.textContent = html;
   }
 </script>
 
