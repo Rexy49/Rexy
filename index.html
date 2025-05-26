@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Number Permutations Generator</title>
+<title>4x4 Grid Number Permutations</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -15,13 +15,13 @@
   }
   .grid {
     display: grid;
-    grid-template-columns: repeat(4, 60px);
+    grid-template-columns: repeat(4, 50px);
     gap: 8px;
     justify-content: center;
     margin-bottom: 20px;
   }
   input[type="number"] {
-    width: 60px;
+    width: 50px;
     height: 50px;
     font-size: 1.2rem;
     text-align: center;
@@ -45,129 +45,142 @@
     display: inline-block;
     font-family: monospace;
   }
+  #instructions {
+    text-align: center;
+    margin-bottom: 10px;
+  }
 </style>
 </head>
 <body>
 
-<h1>Number Permutations Generator</h1>
+<h1>4x4 Grid Number Permutations</h1>
+<div id="instructions">
+  Fill any 4 cells in the grid with numbers (0-9). Then click "Generate Permutations".
+</div>
 
 <div class="grid" id="numberGrid">
-  <!-- Input cells will be created here dynamically -->
+  <!-- 16 input boxes will be created here -->
 </div>
 
 <button onclick="generatePermutations()">Generate Permutations</button>
-<button onclick="resetGrid()">Reset</button>
+<button onclick="resetGrid()">Reset Grid</button>
 
 <input type="text" id="searchInput" placeholder="Search..." oninput="searchPermutations()" style="width: 200px; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; padding: 8px; font-size: 1rem;"/>
 
 <div id="results"></div>
 
 <script>
-  const gridContainer = document.getElementById('numberGrid');
+const gridContainer = document.getElementById('numberGrid');
 
-  // Create input cells for 4 numbers with default values
-  const numberInputs = [];
-  const defaultValues = [9, 8, 7, 6]; // You can change defaults here
-  for (let i=0; i<4; i++) {
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.min = '0';
-    input.max = '9';
-    input.value = defaultValues[i];
-    input.id = 'num' + i;
-    gridContainer.appendChild(input);
-    numberInputs.push(input);
+// Create 16 input cells for the 4x4 grid
+const inputs = [];
+for (let i=0; i<16; i++) {
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.min = '0';
+  input.max = '9';
+  input.value = '';
+  input.id = 'cell' + i;
+  gridContainer.appendChild(input);
+  inputs.push(input);
+}
+
+let allPermutations = [];
+let filteredPermutations = [];
+
+// Reset grid
+function resetGrid() {
+  for (let i=0; i<16; i++) {
+    inputs[i].value = '';
   }
+  allPermutations = [];
+  filteredPermutations = [];
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('searchInput').value = '';
+}
 
-  let allPermutations = [];
-  let filteredPermutations = [];
-
-  // Reset inputs to default values
-  function resetGrid() {
-    const defaults = [9,8,7,6]; // default values
-    for (let i=0; i<4; i++) {
-      numberInputs[i].value = defaults[i];
-    }
-    allPermutations = [];
-    filteredPermutations = [];
-    document.getElementById('results').innerHTML = '';
-    document.getElementById('searchInput').value = '';
-  }
-
-  // Generate all permutations of the four numbers
-  function generatePermutations() {
-    const numbers = [];
-    for (let i=0; i<4; i++) {
-      const val = parseInt(numberInputs[i].value);
-      if (isNaN(val) || val < 0 || val > 9) {
-        alert('Please enter valid numbers between 0 and 9.');
+// Generate permutations based on 4 filled cells
+function generatePermutations() {
+  // Collect the 4 numbers from filled cells
+  const selectedNumbers = [];
+  for (let i=0; i<16; i++) {
+    const val = inputs[i].value.trim();
+    if (val !== '') {
+      const num = parseInt(val);
+      if (isNaN(num) || num < 0 || num > 9) {
+        alert('Please enter valid numbers between 0 and 9 in filled cells.');
         return;
       }
-      numbers.push(val);
+      selectedNumbers.push(num);
     }
-
-    // Generate permutations using Heap's Algorithm
-    allPermutations = permute(numbers);
-    filteredPermutations = [...allPermutations];
-    displayResults();
+  }
+  if (selectedNumbers.length !== 4) {
+    alert('Please fill exactly 4 cells with numbers between 0-9.');
+    return;
   }
 
-  // Heap's Algorithm for permutations
-  function permute(arr) {
-    const results = [];
-    const c = new Array(arr.length).fill(0);
-    results.push(arr.slice());
-    let i = 0;
-    while (i < arr.length) {
-      if (c[i] < i) {
-        if (i % 2 === 0) {
-          [arr[0], arr[i]] = [arr[i], arr[0]];
-        } else {
-          [arr[c[i]], arr[i]] = [arr[i], arr[c[i]]];
-        }
-        results.push(arr.slice());
-        c[i]++;
-        i = 0;
+  // Generate all permutations of these 4 numbers
+  allPermutations = permute(selectedNumbers);
+  filteredPermutations = [...allPermutations];
+  displayResults();
+}
+
+// Heap's Algorithm for permutations
+function permute(arr) {
+  const results = [];
+  const c = new Array(arr.length).fill(0);
+  results.push(arr.slice());
+  let i = 0;
+  while (i < arr.length) {
+    if (c[i] < i) {
+      if (i % 2 === 0) {
+        [arr[0], arr[i]] = [arr[i], arr[0]];
       } else {
-        c[i] = 0;
-        i++;
+        [arr[c[i]], arr[i]] = [arr[i], arr[c[i]]];
       }
+      results.push(arr.slice());
+      c[i]++;
+      i = 0;
+    } else {
+      c[i] = 0;
+      i++;
     }
-    return results;
   }
+  return results;
+}
 
-  // Display current permutations
-  function displayResults() {
-    const container = document.getElementById('results');
-    container.innerHTML = '';
-    if (filteredPermutations.length === 0) {
-      container.innerHTML = '<p>No permutations found.</p>';
-      return;
-    }
-    filteredPermutations.forEach(arr => {
-      const div = document.createElement('div');
-      div.className = 'permutation';
-      div.innerText = arr.join('');
-      container.appendChild(div);
+// Display permutations
+function displayResults() {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+  if (filteredPermutations.length === 0) {
+    container.innerHTML = '<p>No permutations found.</p>';
+    return;
+  }
+  filteredPermutations.forEach(arr => {
+    const div = document.createElement('div');
+    div.className = 'permutation';
+    div.innerText = arr.join('');
+    container.appendChild(div);
+  });
+}
+
+// Search filter
+function searchPermutations() {
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) {
+    filteredPermutations = [...allPermutations];
+  } else {
+    const searchDigits = query.split('');
+    filteredPermutations = allPermutations.filter(arr => {
+      return searchDigits.every(d => arr.includes(parseInt(d)));
     });
   }
+  displayResults();
+}
 
-  // Search filter: show permutations containing all entered digits
-  function searchPermutations() {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) {
-      filteredPermutations = [...allPermutations];
-    } else {
-      const searchDigits = query.split('');
-      filteredPermutations = allPermutations.filter(arr => {
-        return searchDigits.every(d => arr.includes(parseInt(d)));
-      });
-    }
-    displayResults();
-  }
-
-  // Initialize with defaults
-  resetGrid();
+// Initialize grid
+resetGrid();
 </script>
 
 </body>
