@@ -3,261 +3,172 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>4x4 Digit Combinations</title>
+<title>Number Permutations Generator</title>
 <style>
-  :root {
-    --primary-color: #3498db;
-    --secondary-color: #2980b9;
-    --text-color: #2c3e50;
-    --bg-color: #f5f7fa;
-    --card-bg: #ffffff;
-    --border-color: #dfe6e9;
-  }
-  * {
-    box-sizing: border-box;
-  }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    background: var(--bg-color);
-    color: var(--text-color);
-    margin: 0;
-    padding: 15px;
-    line-height: 1.5;
-  }
-  .container {
-    max-width: 1000px;
-    margin: 0 auto;
+    font-family: Arial, sans-serif;
+    background: #f5f7fa;
+    padding: 20px;
   }
   h1 {
-    font-size: clamp(1.5rem, 5vw, 2.2rem);
-    margin: 0 0 10px 0;
     text-align: center;
   }
-  .description {
-    text-align: center;
-    margin-bottom: 15px;
-    font-size: 0.95rem;
-    color: #7f8c8d;
-  }
-  /* Input grid styles */
   .grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(50px, 70px));
+    grid-template-columns: repeat(4, 60px);
     gap: 8px;
     justify-content: center;
     margin-bottom: 20px;
   }
   input[type="number"] {
-    width: 50px;
-    height: clamp(50px, 12vw, 70px);
-    font-size: clamp(18px, 5vw, 24px);
+    width: 60px;
+    height: 50px;
+    font-size: 1.2rem;
     text-align: center;
-    border: 2px solid var(--primary-color);
-    border-radius: 8px;
-    background: var(--card-bg);
-    font-weight: bold;
-  }
-  input[type="number"]:focus {
-    outline: none;
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-  }
-  /* Buttons */
-  .buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    margin: 20px 0;
   }
   button {
-    font-size: clamp(14px, 4vw, 16px);
-    padding: 10px 15px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: 600;
-    min-width: 150px;
-  }
-  button:hover {
-    background-color: var(--secondary-color);
-    transform: translateY(-2px);
-  }
-  button:disabled {
-    background-color: #95a5a6;
-    cursor: not-allowed;
-    opacity: 0.7;
-  }
-  /* Search box */
-  #searchInput {
-    width: 100%;
-    max-width: 300px;
-    padding: 8px;
     margin: 10px auto;
     display: block;
-    border: 2px solid var(--primary-color);
-    border-radius: 6px;
+    padding: 10px 20px;
     font-size: 1rem;
   }
-  /* Results list */
   #results {
     margin-top: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    justify-content: center;
+    max-height: 400px;
+    overflow-y: auto;
   }
-  .number-item {
-    padding: 8px 12px;
-    background: #f8f9fa;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    font-size: 1rem;
+  .permutation {
+    padding: 8px;
+    margin: 4px;
+    background: #e1f0ff;
+    border-radius: 5px;
+    display: inline-block;
+    font-family: monospace;
   }
 </style>
 </head>
 <body>
-<div class="container">
-<h1>4x4 Digit Combinations</h1>
-<div class="description">Enter maximum values (0-9) in each cell, then generate all combinations from 0 up to those maximums. Use the search box to filter combinations.</div>
 
-<!-- Input Grid -->
-<div class="grid" id="inputGrid"></div>
+<h1>Number Permutations Generator</h1>
 
-<!-- Buttons -->
-<div class="buttons">
-  <button id="generateBtn" onclick="generateCombinations()">Generate</button>
-  <button onclick="resetGrid()">Reset</button>
-  <button onclick="saveAsTxt()">Save as TXT</button>
+<div class="grid" id="numberGrid">
+  <!-- Input cells will be created here dynamically -->
 </div>
 
-<!-- Search box -->
-<input type="text" id="searchInput" placeholder="Search digits..." oninput="searchCombinations()" />
+<button onclick="generatePermutations()">Generate Permutations</button>
+<button onclick="resetGrid()">Reset</button>
 
-<!-- Results display -->
+<input type="text" id="searchInput" placeholder="Search..." oninput="searchPermutations()" style="width: 200px; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; padding: 8px; font-size: 1rem;"/>
+
 <div id="results"></div>
-</div>
 
 <script>
-  let allCombinations = [];
-  let filteredCombinations = [];
+  const gridContainer = document.getElementById('numberGrid');
 
-  const inputGrid = document.getElementById('inputGrid');
-
-  // Create 16 input cells
-  function createInputCells() {
-    inputGrid.innerHTML = '';
-    for (let i=0; i<16; i++) {
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.min = '0';
-      input.max = '9';
-      input.value = '0';
-      input.id = 'cell' + i;
-      input.placeholder = '0';
-      input.setAttribute('pattern', '[0-9]');
-      input.setAttribute('maxlength', '1');
-      input.style.width = '50px';
-      input.style.textAlign = 'center';
-      input.oninput = function() {
-        // Ensure only digits 0-9
-        this.value = this.value.replace(/[^0-9]/g, '').slice(0,1);
-      };
-      inputGrid.appendChild(input);
-    }
+  // Create input cells for 4 numbers with default values
+  const numberInputs = [];
+  const defaultValues = [9, 8, 7, 6]; // You can change defaults here
+  for (let i=0; i<4; i++) {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.max = '9';
+    input.value = defaultValues[i];
+    input.id = 'num' + i;
+    gridContainer.appendChild(input);
+    numberInputs.push(input);
   }
 
-  createInputCells();
+  let allPermutations = [];
+  let filteredPermutations = [];
 
-  // Reset grid
+  // Reset inputs to default values
   function resetGrid() {
-    createInputCells();
-    allCombinations = [];
-    filteredCombinations = [];
+    const defaults = [9,8,7,6]; // default values
+    for (let i=0; i<4; i++) {
+      numberInputs[i].value = defaults[i];
+    }
+    allPermutations = [];
+    filteredPermutations = [];
     document.getElementById('results').innerHTML = '';
     document.getElementById('searchInput').value = '';
   }
 
-  // Generate all combinations from 0 up to the max values
-  function generateCombinations() {
-    allCombinations = [];
-    const maxValues = [];
-    for (let i=0; i<16; i++) {
-      const valStr = document.getElementById('cell'+i).value;
-      const maxVal = parseInt(valStr);
-      if (isNaN(maxVal) || maxVal < 0 || maxVal > 9) {
-        alert('Please enter valid numbers 0-9 in all cells.');
+  // Generate all permutations of the four numbers
+  function generatePermutations() {
+    const numbers = [];
+    for (let i=0; i<4; i++) {
+      const val = parseInt(numberInputs[i].value);
+      if (isNaN(val) || val < 0 || val > 9) {
+        alert('Please enter valid numbers between 0 and 9.');
         return;
       }
-      maxValues.push(maxVal);
+      numbers.push(val);
     }
-    // Generate combinations from 0 to max value for each cell
-    for (let a=0; a<=maxValues[0]; a++) {
-      for (let b=0; b<=maxValues[1]; b++) {
-        for (let c=0; c<=maxValues[2]; c++) {
-          for (let d=0; d<=maxValues[3]; d++) {
-            allCombinations.push([a,b,c,d]);
-          }
-        }
-      }
-    }
-    filteredCombinations = [...allCombinations];
-    updateResults();
+
+    // Generate permutations using Heap's Algorithm
+    allPermutations = permute(numbers);
+    filteredPermutations = [...allPermutations];
+    displayResults();
   }
 
-  // Display the current filtered combinations
-  function updateResults() {
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '';
-    if (filteredCombinations.length === 0) {
-      resultsDiv.innerHTML = '<p>No matching combinations.</p>';
+  // Heap's Algorithm for permutations
+  function permute(arr) {
+    const results = [];
+    const c = new Array(arr.length).fill(0);
+    results.push(arr.slice());
+    let i = 0;
+    while (i < arr.length) {
+      if (c[i] < i) {
+        if (i % 2 === 0) {
+          [arr[0], arr[i]] = [arr[i], arr[0]];
+        } else {
+          [arr[c[i]], arr[i]] = [arr[i], arr[c[i]]];
+        }
+        results.push(arr.slice());
+        c[i]++;
+        i = 0;
+      } else {
+        c[i] = 0;
+        i++;
+      }
+    }
+    return results;
+  }
+
+  // Display current permutations
+  function displayResults() {
+    const container = document.getElementById('results');
+    container.innerHTML = '';
+    if (filteredPermutations.length === 0) {
+      container.innerHTML = '<p>No permutations found.</p>';
       return;
     }
-    filteredCombinations.forEach(arr => {
+    filteredPermutations.forEach(arr => {
       const div = document.createElement('div');
-      div.className = 'number-item';
-      div.innerText = arr.join(', ');
-      resultsDiv.appendChild(div);
+      div.className = 'permutation';
+      div.innerText = arr.join('');
+      container.appendChild(div);
     });
   }
 
-  // Search filter: keep only combos that contain all digits entered
-  function searchCombinations() {
+  // Search filter: show permutations containing all entered digits
+  function searchPermutations() {
     const query = document.getElementById('searchInput').value.trim();
-    if (query === '') {
-      // Reset to all
-      filteredCombinations = [...allCombinations];
+    if (!query) {
+      filteredPermutations = [...allPermutations];
     } else {
-      const searchDigits = query.replace(/\D/g, '');
-      filteredCombinations = allCombinations.filter(arr => {
-        return searchDigits.split('').every(d => arr.includes(parseInt(d)));
+      const searchDigits = query.split('');
+      filteredPermutations = allPermutations.filter(arr => {
+        return searchDigits.every(d => arr.includes(parseInt(d)));
       });
     }
-    updateResults();
+    displayResults();
   }
 
-  // Save all combinations as a text file
-  function saveAsTxt() {
-    if (allCombinations.length === 0) {
-      alert('Please generate combinations first.');
-      return;
-    }
-    const lines = allCombinations.map(arr => arr.join(','));
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'combinations.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }
+  // Initialize with defaults
+  resetGrid();
 </script>
+
 </body>
 </html>
