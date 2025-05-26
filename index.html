@@ -3,180 +3,282 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Rex 4D Box Chart with Input and Search</title>
+<title>Rex 4D Box Chart with Search</title>
+<!-- Include Plotly.js for 3D visualization if needed in future -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <style>
+  :root {
+    --primary-color: #3498db;
+    --secondary-color: #2980b9;
+    --text-color: #2c3e50;
+    --bg-color: #f5f7fa;
+    --card-bg: #ffffff;
+    --border-color: #dfe6e9;
+  }
+  * {
+    box-sizing: border-box;
+  }
   body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f4f8;
-    margin: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 15px;
+    line-height: 1.5;
+  }
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
   }
   h1 {
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    margin: 0 0 15px 0;
     text-align: center;
   }
-  /* Correct grid layout: 4x4 grid of input boxes */
+  .description {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 0.95rem;
+    color: #7f8c8d;
+  }
   .grid {
     display: grid;
-    grid-template-columns: repeat(4, 60px);
-    grid-template-rows: repeat(4, 60px);
-    gap: 10px;
+    grid-template-columns: repeat(4, minmax(50px, 70px));
+    gap: 8px;
     justify-content: center;
-    margin-top: 20px;
+    margin-bottom: 20px;
   }
-  .box-input {
-    width: 60px;
-    height: 60px;
-    font-size: 1.5em;
+  input[type="number"] {
+    width: 100%;
+    height: clamp(50px, 12vw, 70px);
+    font-size: clamp(18px, 5vw, 24px);
     text-align: center;
-    border: 2px solid #007bff;
-    border-radius: 4px;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    background: var(--card-bg);
+    font-weight: bold;
+  }
+  input[type="number"]:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
   }
   .buttons {
     display: flex;
-    justify-content: center;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-top: 20px;
+    justify-content: center;
+    margin: 20px 0;
   }
   button {
-    padding: 10px 20px;
-    font-size: 1em;
+    font-size: clamp(14px, 4vw, 16px);
+    padding: 10px 15px;
+    background-color: var(--primary-color);
+    color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    min-width: 120px;
   }
   button:hover {
-    background-color: #007bff;
-    color: white;
+    background-color: var(--secondary-color);
+    transform: translateY(-2px);
   }
-  .search-container {
-    text-align: center;
-    margin-top: 20px;
+  button:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.7;
   }
-  input[type="text"] {
+  /* Search box style */
+  #searchInput {
+    width: 100%;
+    max-width: 300px;
     padding: 8px;
-    font-size: 1em;
-    width: 300px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+    margin: 10px auto;
+    display: block;
+    border: 2px solid var(--primary-color);
+    border-radius: 6px;
+    font-size: 1rem;
   }
-  .combinations {
-    margin-top: 20px;
-    max-height: 300px;
-    overflow-y: auto;
-    padding: 0 20px;
-  }
-  .combination {
-    padding: 5px 0;
-  }
+  /* Results list styling */
+#resultsContainer {
+  margin-top: 20px;
+}
+#results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.number-item {
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 1rem;
+}
 </style>
 </head>
 <body>
+<div class="container">
+<h1>Rex 4D Box Chart with Search</h1>
+<div class="description">Enter numbers in the grid below, then generate all combinations. Use the search box below to find combinations containing specific digits.</div>
 
-<h1>Rex 4D Box Chart with Input and Search</h1>
+<!-- Input Grid -->
+<div class="grid" id="inputGrid"></div>
 
-<div class="grid" id="grid">
-  <!-- 16 input boxes will be generated here -->
-</div>
-
+<!-- Buttons -->
 <div class="buttons">
-  <button id="generateBtn">Generate</button>
-  <button id="resetBtn">Reset</button>
+  <button id="generateBtn" onclick="generateCombinations()">Generate</button>
+  <button onclick="resetGrid()">Reset</button>
 </div>
 
-<div class="search-container">
-  <input type="text" id="searchInput" placeholder="Search combinations containing digits..."/>
-</div>
+<!-- Search box for 3D search -->
+<input type="text" id="searchInput" placeholder="Search combinations containing digits..." oninput="searchCombinations()" />
 
-<div class="combinations" id="combinationsList">
-  <!-- List of combinations will appear here -->
+<!-- Results container -->
+<div id="resultsContainer">
+  <h2>Total Combinations: <span id="totalCount">0</span></h2>
+  <div id="results"></div>
+</div>
 </div>
 
 <script>
-  const gridContainer = document.getElementById('grid');
-  const generateBtn = document.getElementById('generateBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const searchInput = document.getElementById('searchInput');
-  const combinationsList = document.getElementById('combinationsList');
+  let allCombinations = []; // store all 256 combinations
+  let filteredCombinations = []; // store filtered results based on search
 
-  let currentCombinations = [];
-
-  // Initialize grid with 16 input boxes
-  function initGrid() {
-    gridContainer.innerHTML = '';
-    for (let i = 0; i < 16; i++) {
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.maxLength = 1; // restrict to single character
-      input.className = 'box-input';
-      input.placeholder = '0-9';
-      // Restrict input to digits only
-      input.addEventListener('input', () => {
-        input.value = input.value.replace(/[^0-9]/g, '');
-      });
-      gridContainer.appendChild(input);
+// Initialize grid inputs
+function initGrid() {
+  const grid = document.getElementById('inputGrid');
+  grid.innerHTML = '';
+  for (let i=0; i<16; i++) {
+    const input = document.createElement('input');
+    input.type='number';
+    input.min='0'; input.max='9';
+    input.value='0';
+    input.id=`cell-${Math.floor(i/4)}-${i%4}`;
+    input.oninput=function() {
+      if (this.value.length>1) this.value=this.value.slice(0,1);
+      validateInputs();
     }
+    input.onblur=function() {
+      if (this.value==='' || isNaN(this.value)) this.value='0';
+      else {
+        let val=parseInt(this.value);
+        if (val<0) val=0;
+        if (val>9) val=9;
+        this.value=val;
+      }
+      validateInputs();
+    }
+    grid.appendChild(input);
   }
+  validateInputs();
+}
 
-  // Generate all 4-digit combinations from the grid inputs
-  function generateCombinations() {
-    const inputs = document.querySelectorAll('.grid .box-input');
-    const digits = Array.from(inputs).map(input => input.value.trim());
-    if (digits.some(d => d === '')) {
-      alert('Please fill all boxes with digits 0-9.');
-      return;
-    }
-    const combos = [];
-    for (let d1 of digits) {
-      for (let d2 of digits) {
-        for (let d3 of digits) {
-          for (let d4 of digits) {
-            combos.push(d1 + d2 + d3 + d4);
-          }
+// Validate inputs
+function validateInputs() {
+  const inputs=document.querySelectorAll('#inputGrid input');
+  const generateBtn=document.getElementById('generateBtn');
+  let allValid=true;
+  inputs.forEach(input=>{
+    const val=input.value.trim();
+    if (val==='' || isNaN(val) || parseInt(val)<0 || parseInt(val)>9) allValid=false;
+  });
+  generateBtn.disabled=!allValid;
+  return allValid;
+}
+
+// Get current columns values
+function getColumnValues() {
+  const inputs=document.querySelectorAll('#inputGrid input');
+  const columns=[[],[],[],[]];
+  for (let i=0; i<16; i++) {
+    const colIdx=i%4;
+    let val=parseInt(inputs[i].value);
+    val=Math.max(0, Math.min(9, val));
+    columns[colIdx].push(val.toString());
+  }
+  return columns;
+}
+
+// Generate all combinations
+function generateCombinations() {
+  if (!validateInputs()) {
+    alert('Please fill all boxes with numbers between 0-9');
+    return;
+  }
+  const columns=getColumnValues();
+  const combos=new Set();
+
+  for (let a=0; a<columns[0].length; a++) {
+    for (let b=0; b<columns[1].length; b++) {
+      for (let c=0; c<columns[2].length; c++) {
+        for (let d=0; d<columns[3].length; d++) {
+          const combo=columns[0][a]+columns[1][b]+columns[2][c]+columns[3][d];
+          combos.add(combo);
         }
       }
     }
-    currentCombinations = combos;
-    displayCombinations(combos);
   }
+  allCombinations=Array.from(combos).sort();
+  filteredCombinations=allCombinations;
+  displayResults(filteredCombinations);
+  document.getElementById('totalCount').textContent=allCombinations.length;
+}
 
-  // Display list of combinations
-  function displayCombinations(combos) {
-    combinationsList.innerHTML = '';
-    combos.forEach(c => {
-      const div = document.createElement('div');
-      div.className = 'combination';
-      div.textContent = c;
-      combinationsList.appendChild(div);
+// Display results
+function displayResults(combos) {
+  const resultsDiv=document.getElementById('results');
+  resultsDiv.innerHTML='';
+  combos.forEach(c=>{
+    const div=document.createElement('div');
+    div.className='number-item';
+    div.textContent=c;
+    resultsDiv.appendChild(div);
+  });
+}
+
+// Reset grid
+function resetGrid() {
+  document.querySelectorAll('#inputGrid input').forEach(i=>i.value='0');
+  document.getElementById('results').innerHTML='';
+  document.getElementById('totalCount').textContent='0';
+  allCombinations=[];
+  filteredCombinations=[];
+  document.getElementById('searchInput').value='';
+}
+
+// Search function
+function searchCombinations() {
+  const query=document.getElementById('searchInput').value.trim();
+  if (query==='') {
+    // show all
+    filteredCombinations=allCombinations;
+  } else {
+    // filter combinations containing all digits in query
+    const queryDigits=new Set(query.split(''));
+    filteredCombinations=allCombinations.filter(c=>{
+      const cDigits=new Set(c.split(''));
+      // check if cDigits contains all queryDigits
+      for (let d of queryDigits) {
+        if (!cDigits.has(d)) return false;
+      }
+      return true;
     });
   }
+  document.getElementById('totalCount').textContent=filteredCombinations.length;
+  displayResults(filteredCombinations);
+}
 
-  // Reset grid and combination list
-  function resetGrid() {
-    initGrid();
-    combinationsList.innerHTML = '';
-    currentCombinations = [];
-  }
-
-  // Event listeners
-  document.getElementById('generateBtn').addEventListener('click', () => {
-    generateCombinations();
-  });
-
-  document.getElementById('resetBtn').addEventListener('click', () => {
-    resetGrid();
-  });
-
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.trim();
-    if (query === '') {
-      displayCombinations(currentCombinations);
-    } else {
-      const filtered = currentCombinations.filter(c => c.includes(query));
-      displayCombinations(filtered);
-    }
-  });
-
-  // Initialize grid on page load
+// Initialize grid on load
+window.onload=function() {
   initGrid();
+}
 </script>
 </body>
 </html>
